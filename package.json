@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "child_process": "^1.0.2",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
+    "minecraft-server-util": "^5.4.4",
+    "node-ssh": "^13.1.0",
+    "path": "^0.12.7",
+    "socket.io": "^4.8.1",
+    "sqlite3": "^5.1.7",
+    "ssh2": "^1.16.0",
+    "util": "^0.12.5",
+    "xterm": "^5.3.0",
+    "xterm-addon-fit": "^0.8.0"
+  },
+  "name": "ssh-file-browser",
+  "version": "1.0.0",
+  "description": "SSH File Browser with Terminal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "vite": "^6.0.11"
+  }
+}

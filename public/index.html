@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RB4L SSH Console</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client/dist/socket.io.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+  <style></style>
+</head>
+
+<body class="bg-gray-900 h-screen flex overflow-hidden font-['Poppins']">
+  <!-- Sidebar -->
+  <aside class="w-64 bg-custom-dark text-white animate-slide-in">
+    <div class="p-6 border-b border-purple-800">
+      <h1
+        class="text-3xl font-bold bg-gradient-to-r from-custom-purple via-custom-blue to-custom-pink bg-clip-text text-transparent">Craftify</h1>
+      <p class="text-sm text-custom-purple/75">Terminal PRE-ALPHA</p>
+    </div>
+
+    <nav class="mt-6 px-4">
+      <button id="serverTab" onclick="switchTab('server')"
+        class="tab-button active w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fas fa-server text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">Servidor</span>
+      </button>
+
+      <button id="consoleTab" onclick="switchTab('console')"
+        class="tab-button w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fas fa-terminal text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">Consola</span>
+      </button>
+
+      <button id="filesTab" onclick="switchTab('files')"
+        class="tab-button w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fas fa-folder text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">Archivos</span>
+      </button>
+
+      <button id="linuxTab" onclick="switchTab('linux')"
+        class="tab-button w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fab fa-linux text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">Linux</span>
+      </button>
+
+      <button id="logTab" onclick="switchTab('log')"
+        class="tab-button w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fas fa-file-alt text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">Log</span>
+      </button>
+
+      <button id="uuidTab" onclick="switchTab('uuid')"
+        class="tab-button w-full mb-2 p-4 flex items-center space-x-3 rounded-lg transition-all duration-300 hover:bg-purple-800/20 group">
+        <i class="fas fa-key text-custom-purple group-hover:text-custom-blue transition-colors"></i>
+        <span class="font-medium">UUID's</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900">
+    <div class="container mx-auto px-6 py-8">
+      <!-- Server Content -->
+      <div id="serverContent" class="tab-content active h-[90vh]">
+        <div class="bg-custom-dark rounded-xl shadow-lg border border-purple-800/20 p-8 animate-fade-in">
+          <div class="flex flex-col gap-6 h-[85vh]">
+            <!-- Status Header -->
+            <div class="flex items-center justify-between p-4 bg-purple-800/10 rounded-lg border border-purple-800/20">
+              <div class="flex items-center gap-3">
+                <div id="status-indicator" class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                <span id="status" class="text-white font-medium">Online</span>
+              </div>
+              <button id="server_status" class="px-4 py-2 text-white rounded-lg transition-colors duration-300" onclick="handleStartServer()">
+                start
+              </button>
+            </div>
+
+            <!-- Main Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- RAM Usage Card -->
+              <div class="bg-purple-800/10 rounded-lg p-6 border border-purple-800/20">
+                <h3 class="text-custom-purple mb-4 font-medium">Memory Usage</h3>
+                <div class="relative h-4 bg-purple-800/20 rounded-full overflow-hidden">
+                  <div id="ram-bar"
+                    class="absolute h-full bg-gradient-to-r from-custom-purple to-custom-blue transition-all duration-1000"
+                    style="width: 0%"></div>
+                </div>
+                <div class="mt-2 flex justify-between text-sm text-white/70">
+                  <span id="ram-used">--</span>
+                  <span id="ram-total">--</span>
+                </div>
+              </div>
+
+              <!-- TPS Card -->
+              <div class="bg-purple-800/10 rounded-lg p-6 border border-purple-800/20">
+                <h3 class="text-custom-purple mb-4 font-medium">Server TPS</h3>
+                <div class="flex items-end gap-2 h-16">
+                  <div class="tps-bar bg-custom-blue/20 hover:bg-custom-blue transition-all duration-300 w-4 rounded-t">
+                  </div>
+                  <div class="tps-bar bg-custom-blue/20 hover:bg-custom-blue transition-all duration-300 w-4 rounded-t">
+                  </div>
+                  <div class="tps-bar bg-custom-blue/20 hover:bg-custom-blue transition-all duration-300 w-4 rounded-t">
+                  </div>
+                  <div class="tps-bar bg-custom-blue/20 hover:bg-custom-blue transition-all duration-300 w-4 rounded-t">
+                  </div>
+                  <div class="tps-bar bg-custom-blue/20 hover:bg-custom-blue transition-all duration-300 w-4 rounded-t">
+                  </div>
+                </div>
+                <div class="mt-2 text-white/70">
+                  <span id="server-tps">--</span> TPS
+                </div>
+              </div>
+            </div>
+            <!-- Server Info -->
+            <div class="bg-purple-800/10 rounded-lg p-6 border border-purple-800/20">
+              <h3 class="text-custom-purple mb-4 font-medium">Server Information</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">Puerto</span>
+                  <span id="server-port" class="text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">IP</span>
+                  <span id="server-ip" class="text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">Players Online</span>
+                  <span id="players-online" class="text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">Software</span>
+                  <span id="server-software" class="text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">Version</span>
+                  <span id="server-version" class="text-white">--</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="text-white/50 text-sm">Uptime</span>
+                  <span id="server-uptime" class="text-white">--</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <!-- Console Content -->
+        <div id="consoleContent" class="tab-content h-[90vh]">
+
+
+          <div id="console" class="terminal-container"></div>
+        </div>
+      
+      <!-- Files Content -->
+      <div id="filesContent" class="tab-content h-[90vh]">
+        <div id="fileListContainer" class="bg-custom-dark rounded-xl shadow-lg border border-purple-800/20 animate-fade-in">
+          <div class="flex flex-col h-[85vh]">
+            <!-- Header with current path and back button -->
+            <div class="flex items-center justify-between p-4 border-b border-purple-800/20">
+              <h2 id="currentPath" class="text-custom-purple font-medium truncate">
+                Minecraft
+              </h2>
+              <div class="flex flex-col space-y-4">
+                <div class="flex space-x-2">
+                  <button id="refreshButton" class="p-2 text-custom-purple hover:bg-purple-800/20 rounded-lg"
+                    onclick="fetchFiles()">
+                    <i
+                      class="fa-solid fa-refresh text-2xl text-custom-purple hover:text-purple-500 transition duration-300 cursor-pointer"></i>
+                  </button>
+                  <button id="backButton" class="p-2 text-custom-purple hover:bg-purple-800/20 rounded-lg"
+                    onclick="handleBack()">
+                    <i
+                      class="fa-solid fa-arrow-left text-2xl text-custom-purple hover:text-purple-500 transition duration-300 cursor-pointer"></i>
+                  </button>
+                  <button id="uploadButton" class="p-2 text-custom-purple hover:bg-purple-800/20 rounded-lg">
+                    <i
+                      class="fa-solid fa-upload text-2xl text-custom-purple hover:text-purple-500 transition duration-300 cursor-pointer"></i>
+                  </button>
+                  <input type="file" id="fileInput" class="hidden" />
+                </div>
+
+                <!-- Contenedor de progreso -->
+                <div id="uploadProgressContainer" class="space-y-2"></div>
+              </div>
+            </div>
+            <!-- File list -->
+            <div id="fileList" class="flex-1 overflow-y-auto p-4">
+              <div class="grid gap-2">
+                <!-- Contenedor para el editor -->
+                <!-- Files will be dynamically inserted here -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div id="editorContainer" class="hidden">
+          <div class="flex items-center justify-between mb-4">
+            <h3 id="editingFileName" class="text-custom-purple font-medium"></h3>
+            <div class="space-x-2">
+              <button id="saveFileBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+                Guardar
+              </button>
+              <button id="closeEditorBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+                Cerrar
+              </button>
+            </div>
+          </div>
+          <div id="codeEditor" class="w-full h-[70vh] border border-purple-800/20 rounded-lg"></div>
+        </div>
+      </div>
+
+      <!-- Linux Content -->
+      <div id="linuxContent" class="tab-content w-full h-[90vh]">
+        <div class="bg-custom-dark rounded-xl shadow-lg border border-purple-800/20 animate-fade-in">
+          <div class="p-4 border-b border-purple-800/20 w-full">
+            <div class="flex space-x-2">
+              <div class="w-3 h-3 rounded-full bg-red-500"></div>
+              <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+              <div class="w-3 h-3 rounded-full bg-green-500"></div>
+            </div>
+          </div>
+          <div id="terminal" style="height: 90vh !important; width: 100%;"></div>
+        </div>
+      </div>
+      <!-- Log content -->
+      <div id="logContent"
+        class="tab-content bg-purple-800/10 rounded-lg p-6 border border-purple-800/20 h-[80vh] w-[80vw] overflow-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-pink-500 [&::-webkit-scrollbar-track]:bg-pink-500/20">
+        <h3 class="text-custom-purple mb-4 font-medium">Server Logs</h3>
+        <div id="server-logs" class="font-mono text-sm text-white/70 whitespace-pre-wrap">
+          Waiting for server logs...
+        </div>
+      </div>
+      
+      <div id="uuidContent" class="player-grid tab-content w-full h-[90vh]"></div>
+    </div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+  <script>
+    require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+    window.MonacoEnvironment = {
+      getWorkerUrl: function (workerId, label) {
+        return `data:text/javascript;charset=utf-8,${encodeURIComponent(`
+          self.MonacoEnvironment = {
+            baseUrl: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/'
+          };
+          importScripts('https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/base/worker/workerMain.js');`
+        )}`;
+      }
+    };
+  </script>
+  <script src="index.js"></script>
+</body>
+
+</html>

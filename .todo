@@ -1,0 +1,17 @@
+## Bugs:
+# no se pueden descargar/subir archivos muy pesados
+# la consola se pone extraña
+# aveces se desconecta
+# no se puede descargar un directorio
+# Mejoras de rendimiento
+# Not an Number undefined size in 0B files
+# archivos que no se pueden abrir buguean la ruta
+# Bug con doble click al abrir archivos rompen la ruta
+# consola se expande solo al darle a resize
+
+## Futuro:
+# hacer transacción de datos (uuid's)
+# Animación al guardar
+# Buscador en archivos
+# previsualizar skins
+# administrador de conexión ssh
