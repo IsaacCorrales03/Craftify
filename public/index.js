@@ -1,4 +1,5 @@
 // Iniciar el servidor
+// const socket = io('http://https://craftify-7gl5.onrender.com/);
 const socket = io('http://localhost:3000');
 socket.emit('connect_ssh');
 
@@ -325,27 +326,78 @@ terminal.onData(data => {
 });
 
 socket.on('uuids_response', (data) => {
-  if (data.players) { 
+  if (data.players) {
     renderPlayerCards(data.players);
   } else {
     console.error('No se recibieron datos de jugadores:', data);
     document.getElementById('uuidContent').innerHTML = '<p>No hay datos de jugadores disponibles</p>';
   }
 });
-
 function renderPlayerCards(players) {
+  console.log('Rendering player cards, total players:', Object.keys(players).length);
+
   const container = document.getElementById('uuidContent');
+  if (!container) {
+    console.error('Container element not found');
+    return;
+  }
   container.innerHTML = '';
-  
+
+  // Ensure modal exists
+  let modalContainer = document.getElementById('duplicateNametageModal');
+  if (!modalContainer) {
+    console.log('Creating modal container');
+    modalContainer = document.createElement('div');
+    modalContainer.id = 'duplicateNametageModal';
+    modalContainer.className = 'fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black bg-opacity-50';
+    modalContainer.innerHTML = `
+      <div class="bg-custom-dark rounded-xl max-w-md w-full p-8 relative border border-purple-800/20 shadow-lg">
+        <button id="closeModalBtn" class="absolute top-4 right-4 text-custom-purple hover:text-custom-blue transition-colors duration-300">
+          <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div id="duplicateNametageContent" class="text-white"></div>
+      </div>
+    `;
+    document.body.appendChild(modalContainer);
+    console.log('Modal added to body');
+
+    // Close modal logic
+    modalContainer.addEventListener('click', (e) => {
+      console.log('Modal click event', e.target);
+      if (e.target.id === 'duplicateNametageModal' || e.target.closest('#closeModalBtn')) {
+        modalContainer.classList.remove('flex');
+        modalContainer.classList.add('hidden');
+      }
+    });
+  }
+
+
   Object.entries(players).forEach(([uuid, player], index) => {
     const isPremium = player.premium;
     const statusColor = isPremium ? 'text-green-400' : 'text-red-400';
     const statusText = isPremium ? 'Premium' : 'No Premium';
-    
+
+    // Check for duplicate nametags
+    const duplicateNametags = Object.values(players)
+      .filter(p => p.nametag === player.nametag && p.uuid !== uuid);
+    const hasDuplicateNametag = duplicateNametags.length > 0;
+
+    // Parse and format registration time
+    let formattedRegisterTime = 'N/A';
+    try {
+      const timeParts = player.register_in.replace('pm', '').split(/[\/\-:]/);
+      const [registerMonth, registerDay, registerHour, registerMinute] = timeParts;
+      formattedRegisterTime = `${registerMonth}/${registerDay} ${registerHour}:${registerMinute}`;
+    } catch (timeParseError) {
+      console.warn(`Could not parse registration time for player ${player.nametag}:`, timeParseError);
+    }
+
     const card = document.createElement('div');
-    card.className = 'animate-cards bg-purple-800/10 rounded-xl border border-purple-800/20 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-purple-800/20 hover:shadow-lg hover:shadow-purple-500/20 group relative mb-6';
+    card.className = `animate-cards bg-purple-800/10 rounded-xl border border-purple-800/20 p-6 backdrop-blur-sm transition-all duration-300 hover:bg-purple-800/20 hover:shadow-lg hover:shadow-purple-500/20 group relative mb-6 ${hasDuplicateNametag ? 'border-red-500 cursor-pointer' : ''}`;
     card.style.animationDelay = `${index * 100}ms`;
-    
+
     card.innerHTML = `
       <div class="flex items-center gap-4 mg">
         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-custom-purple to-custom-blue p-0.5">
@@ -368,15 +420,58 @@ function renderPlayerCards(players) {
           <span class="text-custom-purple">UUID:</span>
           <span class="font-mono text-xs ml-2 break-all group-hover:text-custom-blue transition-colors">${player.uuid}</span>
         </div>
+        <div class="text-sm text-white/70">
+          <span class="text-custom-purple">Registered:</span>
+          <span class="ml-2">${formattedRegisterTime}</span>
+        </div>
       </div>
-      <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-        <div class="w-2 h-2 rounded-full bg-custom-blue animate-ping"></div>
-      </div>
+      
+      ${hasDuplicateNametag ? `
+        <div class="absolute top-4 right-4">
+          <svg class="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-lienjoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div class="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></div>
+        </div>
+      ` : ''}
     `;
-    
+
+    // Add click event for duplicate nametag warning
+    if (hasDuplicateNametag) {
+      card.addEventListener('click', () => {
+        const modalContent = document.getElementById('duplicateNametageContent');
+        modalContent.innerHTML = `
+        <h2 class="text-2xl font-bold mb-4 text-custom-purple">Duplicate Nametag Alert</h2>
+        <p class="mb-4 text-white/80">The nametag "${player.nametag}" is used by multiple players:</p>
+        <div class="space-y-3">
+          ${[player, ...duplicateNametags].map(p => `
+            <div class="bg-purple-800/10 rounded-lg p-4 border border-purple-800/20">
+              <div class="flex justify-between mb-2">
+                <span class="text-custom-purple font-semibold">Nametag:</span>
+                <span class="text-white">${p.nametag}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-custom-purple font-semibold">UUID:</span>
+                <span class="font-mono text-sm text-white break-all">${p.uuid}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+        const modalContainer = document.getElementById('duplicateNametageModal');
+        modalContainer.classList.remove('hidden');
+        modalContainer.classList.add('flex');
+      });
+    }
+
+
     container.appendChild(card);
   });
 }
+
+
+
 const consoleContainer = document.getElementById('console');
 
 // Configuración inicial de la terminal
@@ -840,7 +935,6 @@ document.getElementById('closeEditorBtn').addEventListener('click', () => {
 
   editorContainer.classList.add('hidden');
   fileListContainer.classList.remove('hidden');
-  handleBack()
 });
 
 // Event listener para el botón de guardar
@@ -884,8 +978,9 @@ function showNotification(message, type = 'info') {
   console.log(`${type}: ${message}`);
 }
 async function handleEditFile(filename) {
-  route = route + '/' + filename
-  socket.emit('edit_file', route)
+  let base_route = route
+  const fullPath = base_route + '/' + filename;
+  socket.emit('edit_file', fullPath)
 }
 
 // Función de actualización de estadísticas
@@ -941,13 +1036,6 @@ function handleUploadError(fileName, error) {
   showToast(`Error al subir el archivo: ${error.message}`, 'error');
 }
 
-// Funciones auxiliares
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${units[i]}`;
-}
 
 function formatTime(seconds) {
   if (!isFinite(seconds) || seconds < 0) return '--:--';
@@ -1095,7 +1183,7 @@ const modalTemplate = `
 // Add modal to the document
 document.body.insertAdjacentHTML('beforeend', modalTemplate);
 
-// Toast notification system (mantiene la misma funcionalidad)
+// Toast notification system
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg flex items-center space-x-2 transition-all duration-500 transform translate-y-full opacity-0 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'
@@ -1272,7 +1360,10 @@ function handleChange(filename) {
   fetchFiles();
 
 }
-
+socket.on('non-edit', async () => {
+  showToast("El archivo no es editable", "error")
+  handleBack()
+})
 // log
 
 const logContainer = document.getElementById('server-logs');
@@ -1324,7 +1415,7 @@ function switchTab(tab) {
   if (tab == 'console') {
     socket.emit('console');
     fitAddon.fit();
-    
+
   }
   if (tab == 'linux') {
     socket.emit('terminal')
@@ -1335,9 +1426,21 @@ function switchTab(tab) {
 }
 
 function formatFileSize(bytes) {
-  if (!bytes) return '0 B';
+  // Check for invalid input
+
+  // Handle zero case
+  if (bytes == 0) {
+
+    return '0 B';
+  }
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+  // Safely calculate the appropriate unit
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1
+  );
+
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }

@@ -1,7 +1,7 @@
 // server.js
 const express = require('express');
 const app = express();
-
+const path = require('path');
 const http = require('http').createServer(app);
 const io = require('socket.io')(http, {
   cors: {
@@ -363,7 +363,6 @@ io.on('connection', (socket) => {
           return null;
         })
         .filter(file => file && file.name && file.name !== '.' && file.name !== '..');
-
       socket.emit('files_response', { files });
     } catch (error) {
       console.error('Error al listar archivos:', error);
@@ -520,8 +519,37 @@ io.on('connection', (socket) => {
       }
     }
   });
+
+  const NON_EDITABLE_EXTENSIONS = [
+    '.zip', 
+    '.jar', 
+    '.db', 
+    '.sqlite', 
+    '.sqlite3', 
+    '.sql', 
+    '.exe', 
+    '.bin', 
+    '.png', 
+    '.jpg', 
+    '.jpeg', 
+    '.gif', 
+    '.pdf', 
+    '.ico', 
+    '.tar', 
+    '.gz', 
+    '.rar', 
+    '.7z'
+  ];
+  
   socket.on("edit_file", async (filePath) => {
     console.log("Solicitud para editar archivo:", filePath);
+  
+    // Check file extension
+    const fileExtension = path.extname(filePath).toLowerCase();
+    if (NON_EDITABLE_EXTENSIONS.includes(fileExtension)) {
+      socket.emit("non-edit");
+      return;
+    }
   
     let sftp = null;
     try {
@@ -534,6 +562,12 @@ io.on('connection', (socket) => {
           else resolve(data);
         });
       });
+  
+      // Additional check for binary content
+      if (isFileBinary(fileContent)) {
+        socket.emit("error", { message: "El archivo no es editable" });
+        return;
+      }
   
       socket.emit("file_content", {
         filePath,
@@ -548,6 +582,21 @@ io.on('connection', (socket) => {
       }
     }
   });
+  
+  // Helper function to detect binary files
+  function isFileBinary(buffer) {
+    // Check if the file contains null bytes or has high percentage of non-printable characters
+    const nullByteCount = buffer.filter(byte => byte === 0).length;
+    const nonPrintableCount = buffer.filter(byte => 
+      byte < 32 && byte !== 9 && byte !== 10 && byte !== 13
+    ).length;
+  
+    const nullByteRatio = nullByteCount / buffer.length;
+    const nonPrintableRatio = nonPrintableCount / buffer.length;
+  
+    // If more than 10% null bytes or 30% non-printable characters, consider it binary
+    return nullByteRatio > 0.1 || nonPrintableRatio > 0.3;
+  }
 
   // Maneja la desconexión
   socket.on('disconnect', async () => {
@@ -561,23 +610,7 @@ io.on('connection', (socket) => {
     const log = await ssh.execCommand('cat /home/minecraft/logs/latest.log')
     socket.emit('log_response', log)
   })
-  socket.on('fetch_players', async () => {
-    fetTablePlayers()
-  })
-  function fetTablePlayers() {
-    const db = new sqlite3.Database(dbPath);
-    const query = 'SELECT * FROM Players';
-    db.all(query, [], (err, rows) => {
-      if (err) {
-        console.error('Error al ejecutar la consulta:', err.message);
-        socket.emit('player_data_response', {err, rows })
-      }
-      else {
-        socket.emit('player_data_response', { err, rows })
-      }
-    })
 
-  }
 });
 
 async function getScreenSessionId() {

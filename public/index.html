@@ -22,7 +22,8 @@
   <aside class="w-64 bg-custom-dark text-white animate-slide-in">
     <div class="p-6 border-b border-purple-800">
       <h1
-        class="text-3xl font-bold bg-gradient-to-r from-custom-purple via-custom-blue to-custom-pink bg-clip-text text-transparent">Craftify</h1>
+        class="text-3xl font-bold bg-gradient-to-r from-custom-purple via-custom-blue to-custom-pink bg-clip-text text-transparent">
+        CherryNexus</h1>
       <p class="text-sm text-custom-purple/75">Terminal PRE-ALPHA</p>
     </div>
 
@@ -78,7 +79,8 @@
                 <div id="status-indicator" class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
                 <span id="status" class="text-white font-medium">Online</span>
               </div>
-              <button id="server_status" class="px-4 py-2 text-white rounded-lg transition-colors duration-300" onclick="handleStartServer()">
+              <button id="server_status" class="px-4 py-2 text-white rounded-lg transition-colors duration-300"
+                onclick="handleStartServer()">
                 start
               </button>
             </div>
@@ -153,16 +155,17 @@
         </div>
       </div>
 
-        <!-- Console Content -->
-        <div id="consoleContent" class="tab-content h-[90vh]">
+      <!-- Console Content -->
+      <div id="consoleContent" class="tab-content h-[90vh]">
 
 
-          <div id="console" class="terminal-container"></div>
-        </div>
-      
+        <div id="console" class="terminal-container"></div>
+      </div>
+
       <!-- Files Content -->
       <div id="filesContent" class="tab-content h-[90vh]">
-        <div id="fileListContainer" class="bg-custom-dark rounded-xl shadow-lg border border-purple-800/20 animate-fade-in">
+        <div id="fileListContainer"
+          class="bg-custom-dark rounded-xl shadow-lg border border-purple-800/20 animate-fade-in">
           <div class="flex flex-col h-[85vh]">
             <!-- Header with current path and back button -->
             <div class="flex items-center justify-between p-4 border-b border-purple-800/20">
@@ -205,10 +208,12 @@
           <div class="flex items-center justify-between mb-4">
             <h3 id="editingFileName" class="text-custom-purple font-medium"></h3>
             <div class="space-x-2">
-              <button id="saveFileBtn" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
+              <button id="saveFileBtn"
+                class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition">
                 Guardar
               </button>
-              <button id="closeEditorBtn" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
+              <button id="closeEditorBtn"
+                class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition">
                 Cerrar
               </button>
             </div>
@@ -238,7 +243,7 @@
           Waiting for server logs...
         </div>
       </div>
-      
+
       <div id="uuidContent" class="player-grid tab-content w-full h-[90vh]"></div>
     </div>
   </main>

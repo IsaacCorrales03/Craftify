@@ -4,10 +4,10 @@
 # aveces se desconecta
 # no se puede descargar un directorio
 # Mejoras de rendimiento
-# Not an Number undefined size in 0B files
-# archivos que no se pueden abrir buguean la ruta
-# Bug con doble click al abrir archivos rompen la ruta
 # consola se expande solo al darle a resize
+# Aveces no guarda y hay que actualizar
+# Muchas solicitudes
+# No sobre escribe archivos
 
 ## Futuro:
 # hacer transacción de datos (uuid's)
@@ -15,3 +15,7 @@
 # Buscador en archivos
 # previsualizar skins
 # administrador de conexión ssh
+# Más stats
+# loading mientras se abre un archivo
+# Reportar duplicados de uuid
+# añadir el "registrado en:"
