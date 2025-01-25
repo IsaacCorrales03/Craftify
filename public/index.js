@@ -1,6 +1,6 @@
 // Iniciar el servidor
-//const socket = io('http://https://craftify-7gl5.onrender.com/');
-const socket = io('http://localhost:3000');
+const socket = io('https://craftify-7gl5.onrender.com/');
+//const socket = io('http://localhost:3000');
 socket.emit('connect_ssh');
 
 // Ruta base para los archivos
